@@ -8,15 +8,15 @@
 		"n8n-community-node-package"
 	],
 	"author": {
-		"name": "",
-		"email": ""
+		"name": "Maryuri",
+		"email": "maryurialonso11@gmail.com"
 	},
 	"repository": {
 		"type": "git",
 		"url": ""
 	},
 	"scripts": {
-		"build": "n8n-node build",
+		"build": "n8n-node build && node build.js",
 		"build:watch": "tsc --watch",
 		"dev": "n8n-node dev",
 		"lint": "n8n-node lint",
