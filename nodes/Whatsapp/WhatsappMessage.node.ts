@@ -162,10 +162,8 @@ export class WhatsappMessage implements INodeType {
 					throw new Error('El mensaje excede el límite de 4096 caracteres');
 				}
 
-				// Normalizar número de teléfono - remover espacios y guiones
 				recipientPhone = recipientPhone.replace(/[\s\-]/g, '');
 
-				// Validar formato del teléfono
 				if (!recipientPhone.startsWith('+')) {
 					throw new Error('El número debe incluir el código de país con + (ej: +573001234567)');
 				}
@@ -181,7 +179,6 @@ export class WhatsappMessage implements INodeType {
 					throw new Error('Token de acceso no configurado en las credenciales');
 				}
 
-				// Esperar si es requerido
 				if (requireWaiting) {
 					const waitTime = this.getNodeParameter('wait_time', i) as number;
 					await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
@@ -192,7 +189,6 @@ export class WhatsappMessage implements INodeType {
 				let success = false;
 				let lastError: any = null;
 
-				// Reintentos
 				while (attempt < tries && !success) {
 					attempt++;
 
@@ -223,7 +219,6 @@ export class WhatsappMessage implements INodeType {
 						lastError = error;
 
 						if (attempt < tries) {
-							// Esperar antes de reintentar
 							await new Promise(resolve => setTimeout(resolve, messageWaitTime * 1000));
 						}
 					}
