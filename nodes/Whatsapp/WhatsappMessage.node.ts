@@ -153,7 +153,6 @@ export class WhatsappMessage implements INodeType {
 				const messageWaitTime = this.getNodeParameter('message_wait_time', i) as number;
 				const mainMessage = this.getNodeParameter('main_message', i) as string;
 
-				// Validaciones
 				if (!mainMessage || mainMessage.trim().length === 0) {
 					throw new Error('El mensaje no puede estar vacío');
 				}
