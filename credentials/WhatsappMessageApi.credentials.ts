@@ -38,6 +38,23 @@ export class WhatsappMessageApi implements ICredentialType {
 			required: true,
 			description: 'Token de acceso de tu aplicación de WhatsApp Business',
 		},
+		{
+				displayName: 'API Version',
+				name: 'version_api',
+				type: 'options',
+				options: [
+					{
+						name: 'v22.0',
+						value: 'v22.0',
+					},
+					{
+						name: 'v19.0',
+						value: 'v19.0',
+					},
+				],
+				default: 'v22.0',
+				description: 'Versión de la API de WhatsApp Business',
+			},
 	];
 
 	authenticate: IAuthenticateGeneric = {
