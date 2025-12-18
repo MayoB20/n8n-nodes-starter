@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-whatsapp-message",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "WhatsApp Message node for n8n",
 	"license": "MIT",
 	"homepage": "https://github.com/MayoB20/n8n-nodes-starter.git",
@@ -47,9 +47,8 @@
 	},
 	"peerDependencies": {
 		"n8n-workflow": "*"
-		},
+	},
 	"engines": {
 		"node": ">=18.0.0"
-
 	}
 }
