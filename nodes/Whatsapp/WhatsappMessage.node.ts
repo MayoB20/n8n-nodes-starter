@@ -68,7 +68,7 @@ export class WhatsappMessage implements INodeType {
 					},
 					{
 						name: 'Form-Data',
-						value: 'form-data',	
+						value: 'form-data',
 					},
 					{
 						name: 'JSON',
@@ -268,6 +268,18 @@ export class WhatsappMessage implements INodeType {
 				description: 'Whether to send waiting messages while the workflow continues processing',
 			},
 			{
+				displayName: 'Check for User Response',
+				name: 'check_user_response',
+				type: 'boolean',
+				default: false,
+				description: 'Whether to check if user has responded before sending waiting messages. If enabled, waiting messages will only be sent if the user has NOT responded.',
+				displayOptions: {
+					show: {
+						send_presence_check: [true],
+					},
+				},
+			},
+			{
 				displayName: 'Wait Time Before First Check (Seconds)',
 				name: 'wait_time_check',
 				type: 'number',
@@ -383,6 +395,7 @@ export class WhatsappMessage implements INodeType {
 				let recipientPhone = this.getNodeParameter('recive_phone_number', i) as string;
 				const sendBody = this.getNodeParameter('send_body', i) as boolean;
 				const sendPresenceCheck = this.getNodeParameter('send_presence_check', i) as boolean;
+				const checkUserResponse = this.getNodeParameter('check_user_response', i, false) as boolean;
 				const tries = this.getNodeParameter('tries', i) as number;
 				const messageWaitTime = this.getNodeParameter('message_wait_time', i) as number;
 
@@ -427,6 +440,38 @@ export class WhatsappMessage implements INodeType {
 						}
 					}
 					throw lastError || new NodeOperationError(this.getNode(), 'No se pudo enviar el mensaje después de todos los intentos');
+				};
+
+				const checkForUserMessages = async (): Promise<boolean> => {
+					try {
+						const url = `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`;
+						const response = await this.helpers.httpRequest({
+							method: 'GET',
+							url,
+							headers: {
+								Authorization: `Bearer ${apiToken}`,
+							},
+							qs: {
+								fields: 'messages',
+								limit: 10,
+							},
+							json: true,
+						});
+
+						const messages = response.messages as Array<{
+							from: string;
+							timestamp: string;
+						}> | undefined;
+
+						if (!messages || messages.length === 0) {
+							return false;
+						}
+
+						const userMessages = messages.filter(msg => msg.from === recipientPhone);
+						return userMessages.length > 0;
+					} catch {
+						return false;
+					}
 				};
 
 				const sentMessages: Array<{
@@ -648,6 +693,25 @@ export class WhatsappMessage implements INodeType {
 					let messageIndex = 0;
 					let messagesSent = 0;
 
+					if (checkUserResponse) {
+						const hasResponded = await checkForUserMessages();
+						if (hasResponded) {
+							returnData.push({
+								json: {
+									success: true,
+									recipient: recipientPhone,
+									usedCustomBody: sendBody,
+									totalMessagesSent: sentMessages.length,
+									presenceCheckSent: false,
+									userResponded: true,
+									messages: sentMessages,
+									timestamp: new Date().toISOString(),
+								},
+							});
+							continue;
+						}
+					}
+
 					const firstMessage = checkMessages[messageIndex % checkMessages.length];
 					messageIndex++;
 					messagesSent++;
@@ -676,6 +740,13 @@ export class WhatsappMessage implements INodeType {
 								break;
 							}
 
+							if (checkUserResponse) {
+								const hasResponded = await checkForUserMessages();
+								if (hasResponded) {
+									break;
+								}
+							}
+
 							const currentMessage = checkMessages[messageIndex % checkMessages.length];
 							messageIndex++;
 							messagesSent++;
@@ -696,8 +767,8 @@ export class WhatsappMessage implements INodeType {
 									timestamp: new Date().toISOString(),
 									type: 'presence_check',
 								});
-							} catch (error) {
-								void error;	
+							} catch {
+								// Error handled silently - background process for waiting messages
 							}
 						}
 					})();
@@ -710,6 +781,7 @@ export class WhatsappMessage implements INodeType {
 						usedCustomBody: sendBody,
 						totalMessagesSent: sentMessages.length,
 						presenceCheckSent: sendPresenceCheck,
+						userResponded: checkUserResponse ? await checkForUserMessages() : undefined,
 						messages: sentMessages,
 						timestamp: new Date().toISOString(),
 					},
